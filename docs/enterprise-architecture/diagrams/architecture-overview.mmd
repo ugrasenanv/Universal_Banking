@@ -1,0 +1,126 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a365d', 'primaryTextColor': '#fff', 'primaryBorderColor': '#2d3748', 'lineColor': '#4a5568', 'secondaryColor': '#2b6cb0', 'tertiaryColor': '#ebf8ff'}}}%%
+graph TB
+    subgraph External["🌐 External Channels"]
+        MOB[📱 Mobile App<br/>32M MAU]
+        WEB[🌐 Web Portal]
+        IVR[📞 IVR<br/>18K Agents]
+        BRANCH[🏢 4,200 Branches]
+        OPENAPI[🔗 Open Banking<br/>340 Fintechs]
+    end
+
+    subgraph Gateway["🛡️ API Gateway & Security"]
+        APIGW[Kong API Gateway<br/>Rate Limiting • AuthN]
+        BFF[BFF per Channel]
+        MESH[Istio Service Mesh<br/>mTLS • SPIFFE/SPIRE]
+    end
+
+    subgraph AIOrch["🧠 AI Orchestration Layer"]
+        LLMGW[LLM Gateway<br/>Routing • Caching • Quotas]
+        GUARD[Guardrails Engine<br/>Injection • PII • Toxicity]
+        PROMPT[Prompt Registry<br/>Versioned • Approved]
+        RAG[RAG Pipeline<br/>Chunk • Embed • Retrieve]
+    end
+
+    subgraph AIServices["⚡ AI/ML Services"]
+        FRAUD[Fraud Inference<br/>100ms p99 • 82K TPS]
+        AML[AML Triage<br/>Alert • Narrative • SAR]
+        SANCTIONS[Sanctions Screening<br/>FP: 96%→70%]
+        CREDIT[Credit Underwriting<br/>4h Retail • 48h SME]
+        CONVAI[Conversational AI<br/>11 Languages]
+        RMCOP[RM Copilot<br/>30s Brief]
+        DOCINT[Document Intelligence<br/>KYC • Trade Finance]
+        NBA[NBA Engine<br/>Real-time Offers]
+        COMPLAINTS[Complaints<br/>Classification]
+        BRANCHCOP[Branch Copilot<br/>Policies • Circulars]
+    end
+
+    subgraph Data["💾 Data Layer"]
+        FEAT[Feature Store<br/>Redis • 82K reads/s]
+        CUST360[Customer 360<br/>41M Unified Profiles]
+        VECTOR[Vector Store<br/>pgvector • Tenant-Isolated]
+        LAKE[Lakehouse<br/>Iceberg • Parquet]
+    end
+
+    subgraph Stream["📡 Streaming Backbone"]
+        KAFKA[Kafka 3.7 KRaft<br/>Schema Registry • CDC]
+    end
+
+    subgraph Integration["🔌 Integration Layer"]
+        MAINFRAME[Mainframe Facade<br/>z/OS API • Cache]
+        FINACLE[Finacle Adapter<br/>Retail India]
+        T24[T24 Adapter<br/>SG • UK]
+        AURORA[Aurora Neobank<br/>K8s Native]
+    end
+
+    subgraph Governance["📋 Governance & Observability"]
+        AUDIT[Audit Service<br/>7-Year Retention]
+        MODELREG[Model Registry<br/>SR 11-7 Aligned]
+        HITL[Human Review Queue<br/>HITL Mandatory]
+        FINOPS[FinOps Service<br/>Per-Customer Cost]
+        OTEL[OpenTelemetry<br/>Traces • Metrics • Logs]
+    end
+
+    %% Connections
+    MOB --> APIGW
+    WEB --> APIGW
+    IVR --> APIGW
+    BRANCH --> APIGW
+    OPENAPI --> APIGW
+
+    APIGW --> BFF
+    BFF --> MESH
+    MESH --> FRAUD
+    MESH --> AML
+    MESH --> CREDIT
+    MESH --> CONVAI
+    MESH --> DOCINT
+    MESH --> NBA
+
+    FRAUD --> FEAT
+    FRAUD --> LLMGW
+    AML --> RAG
+    AML --> LLMGW
+    SANCTIONS --> LLMGW
+    CREDIT --> FEAT
+    CONVAI --> RAG
+    CONVAI --> LLMGW
+    RMCOP --> RAG
+    RMCOP --> LLMGW
+    DOCINT --> LLMGW
+    NBA --> FEAT
+    COMPLAINTS --> LLMGW
+    BRANCHCOP --> RAG
+
+    LLMGW --> GUARD
+    LLMGW --> PROMPT
+    RAG --> VECTOR
+
+    FRAUD --> KAFKA
+    AML --> KAFKA
+    CREDIT --> KAFKA
+    KAFKA --> AUDIT
+
+    KAFKA --> MAINFRAME
+    KAFKA --> FINACLE
+    KAFKA --> T24
+    KAFKA --> AURORA
+
+    MAINFRAME --> CUST360
+    FINACLE --> CUST360
+    T24 --> CUST360
+    AURORA --> CUST360
+
+    CUST360 --> FEAT
+    CUST360 --> LAKE
+
+    AML --> HITL
+    FRAUD --> HITL
+    CREDIT --> HITL
+
+    MODELREG --> FRAUD
+    MODELREG --> CREDIT
+    MODELREG --> AML
+
+    OTEL --> FRAUD
+    OTEL --> AML
+    OTEL --> LLMGW

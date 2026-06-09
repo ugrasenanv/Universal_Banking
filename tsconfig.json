@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "composite": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "paths": {
+      "@afg/shared-types": ["./packages/shared-types/src/index.ts"],
+      "@afg/shared-types/*": ["./packages/shared-types/src/*"],
+      "@afg/platform-services": ["./packages/platform-services/src/index.ts"],
+      "@afg/platform-services/*": ["./packages/platform-services/src/*"],
+      "@afg/ai-services": ["./packages/ai-services/src/index.ts"],
+      "@afg/ai-services/*": ["./packages/ai-services/src/*"],
+      "@afg/data-layer": ["./packages/data-layer/src/index.ts"],
+      "@afg/data-layer/*": ["./packages/data-layer/src/*"],
+      "@afg/integration-layer": ["./packages/integration-layer/src/index.ts"],
+      "@afg/integration-layer/*": ["./packages/integration-layer/src/*"],
+      "@afg/infrastructure": ["./packages/infrastructure/src/index.ts"],
+      "@afg/infrastructure/*": ["./packages/infrastructure/src/*"]
+    }
+  },
+  "references": [
+    { "path": "./packages/shared-types" },
+    { "path": "./packages/platform-services" },
+    { "path": "./packages/ai-services" },
+    { "path": "./packages/data-layer" },
+    { "path": "./packages/integration-layer" },
+    { "path": "./packages/infrastructure" }
+  ],
+  "exclude": ["node_modules", "dist"]
+}

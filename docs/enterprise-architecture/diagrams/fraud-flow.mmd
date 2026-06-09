@@ -1,0 +1,69 @@
+%%{init: {'theme': 'base'}}%%
+sequenceDiagram
+    participant C as 📱 Customer
+    participant APP as Mobile App
+    participant GW as API Gateway
+    participant BFF as BFF
+    participant PO as Payment Orchestrator
+    participant ID as Identity Service
+    participant FS as Feature Store
+    participant FI as Fraud Inference
+    participant EX as Explainability
+    participant DO as Decision Orchestrator
+    participant K as Kafka
+    participant SCA as Step-Up Auth
+    participant HRQ as Human Review Queue
+    participant CC as Contact Centre
+    participant COP as AML/Fraud Co-Pilot
+    participant LLM as LLM Gateway
+    participant MF as Mainframe Facade
+    participant AU as Audit Service
+    participant N as Notification
+
+    C->>APP: Initiate UPI ₹2,40,000
+    APP->>GW: HTTPS + Bearer Token [2ms]
+    GW->>BFF: mTLS [2ms]
+    BFF->>PO: Route payment [2ms]
+    
+    PO->>ID: Validate session [3ms]
+    ID-->>PO: OK (OIDC valid)
+    
+    PO->>FS: Get features [8ms p99]
+    FS-->>PO: txn_velocity, device_fp, payee_risk
+    
+    PO->>FI: Score transaction [gRPC]
+    FI->>EX: Compute SHAP [8ms]
+    EX-->>FI: Top 3 factors
+    FI-->>PO: Score: 0.72 (HOLD) + Attribution [55ms total]
+    
+    PO->>DO: Route decision
+    DO-->>PO: Confirm HOLD (new beneficiary + borderline)
+    
+    PO->>K: Publish events [async, 3ms]
+    Note over K: afg.fraud.in.scores<br/>afg.fraud.in.decisions
+    
+    PO->>SCA: Trigger biometric challenge
+    SCA->>APP: Push notification
+    APP->>C: Request fingerprint
+    C->>APP: Confirm biometric
+    APP->>SCA: SCA success
+    SCA-->>PO: Authenticated
+    
+    Note over PO: Score still borderline → Escalate
+    
+    PO->>HRQ: Escalate (score=0.72, context) [30s]
+    HRQ->>CC: Assign to agent
+    
+    CC->>COP: "Is this suspicious?"
+    COP->>LLM: Query with PII redacted
+    LLM->>MF: Get account context [15ms cache]
+    MF-->>LLM: Corporate relationship data
+    LLM-->>COP: "Low risk - verified merchant" + citations [8s]
+    COP-->>CC: Assessment + evidence
+    
+    CC->>HRQ: APPROVE (rationale: verified merchant)
+    HRQ->>PO: Release transaction
+    PO->>AU: Full audit chain [7-year retention]
+    Note over AU: Score • Factors • SCA • Co-pilot • Decision
+    PO->>N: Payment released
+    N->>C: "₹2,40,000 sent to [beneficiary]"

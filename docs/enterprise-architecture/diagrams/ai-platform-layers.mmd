@@ -1,0 +1,96 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a365d'}}}%%
+graph TB
+    subgraph Channels["📱 Customer & Employee Channels"]
+        direction LR
+        M[Mobile 32M MAU]
+        W[Web]
+        I[IVR 18K Agents]
+        B[4,200 Branches]
+        RM[RM Workstation]
+        OB[Open Banking 340 Partners]
+    end
+
+    subgraph Security["🛡️ Zero-Trust Security Layer"]
+        direction LR
+        GW[API Gateway<br/>Kong]
+        SM[Service Mesh<br/>Istio mTLS]
+        IAM[Identity<br/>Keycloak OIDC/FAPI]
+        SPIFFE[Workload ID<br/>SPIFFE/SPIRE]
+    end
+
+    subgraph AIControl["🎛️ AI Control Plane"]
+        direction LR
+        LLMGW[LLM Gateway<br/>Model Routing<br/>Semantic Cache<br/>Rate Limits]
+        GE[Guardrails Engine<br/>Injection ≥95%<br/>Jailbreak ≥90%<br/>PII Redaction]
+        PR[Prompt Registry<br/>Versioned<br/>Approved<br/>Evaluated]
+        EH[Eval Harness<br/>Quality Gates<br/>Safety Gates<br/>Bias Checks]
+    end
+
+    subgraph Models["🤖 Model Serving"]
+        direction LR
+        GPU1[vLLM<br/>Llama 3.1 70B INT8<br/>Complex GenAI]
+        GPU2[vLLM<br/>Mistral 7B INT4<br/>Simple Tasks]
+        TRITON[Triton<br/>XGBoost/LightGBM<br/>Fraud • Credit]
+        EMBED[Embedding Service<br/>multilingual-e5<br/>768 dimensions]
+        FRONTIER[Frontier APIs<br/>GPT-4 / Claude<br/>PII-free only]
+    end
+
+    subgraph RAGLayer["📚 RAG Pipeline"]
+        direction LR
+        CHUNK[Chunking<br/>Hierarchical: AML<br/>Structural: Products]
+        VEC[Vector Store<br/>pgvector<br/>Tenant Isolated]
+        HYBRID[Hybrid Retrieval<br/>BM25 + Dense<br/>Cross-Encoder Rerank]
+        GROUND[Groundedness<br/>Score 0-1.0<br/>Refuse < 0.70]
+    end
+
+    subgraph Services["⚡ AI/ML Business Services (12 Use Cases)"]
+        direction LR
+        S1[UC-01: Payment Fraud<br/>100ms p99]
+        S2[UC-02: Card Fraud<br/>150ms p99]
+        S3[UC-03: AML Triage<br/>HITL Mandatory]
+        S4[UC-04: Sanctions<br/>FP < 70%]
+        S5[UC-05: Credit<br/>4h/48h TAT]
+        S6[UC-06: Credit-Line<br/>Fair Lending]
+        S7[UC-07: Conv. AI<br/>11 Languages]
+        S8[UC-08: RM Copilot<br/>30s Brief]
+        S9[UC-09: Doc Intel<br/>< 3% Error]
+        S10[UC-10: Complaints<br/>< 5% Misroute]
+        S11[UC-11: NBA<br/>Real-time]
+        S12[UC-12: Branch Copilot<br/>Citations]
+    end
+
+    subgraph DataLayer["💾 Data Platform"]
+        direction LR
+        FS[Feature Store<br/>Redis Online<br/>Iceberg Offline]
+        C360[Customer 360<br/>41M Profiles<br/>18 Source Systems]
+        LAKE[Lakehouse<br/>Iceberg + Parquet<br/>Analytics + Audit]
+        STREAM[Kafka 3.7<br/>KRaft Mode<br/>Schema Registry<br/>CDC Debezium]
+    end
+
+    subgraph CoreSystems["🏦 Core Banking Systems (Unchanged)"]
+        direction LR
+        FIN[Finacle 10.x<br/>India Retail]
+        MF[IBM z/OS<br/>Corporate/Trade<br/>NOT Replaced]
+        T24[Temenos T24<br/>SG + UK]
+        AUR[Aurora Neobank<br/>K8s + Kafka]
+        SAT[14 Satellite<br/>Systems]
+    end
+
+    subgraph Govern["📋 Governance & Operations"]
+        direction LR
+        MReg[Model Registry<br/>SR 11-7]
+        AUDIT[Audit 7-Year<br/>Immutable<br/>SHA-256]
+        HITL[Human Review<br/>Queue]
+        DRIFT[Drift Monitor<br/>Champion/Challenger]
+        FINOPS[FinOps<br/>Per-Customer Cost]
+        OTEL[OpenTelemetry<br/>Prometheus<br/>Grafana]
+    end
+
+    Channels --> Security
+    Security --> AIControl
+    AIControl --> Models
+    AIControl --> RAGLayer
+    Services --> AIControl
+    Services --> DataLayer
+    DataLayer --> CoreSystems
+    Services --> Govern

@@ -1,0 +1,740 @@
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 1 of 23  Enterprise AI / ML Architecture 
+Assessment  
+Banking Edition — Cloud-Agnostic  
+Role: Account Architect (20+ Years Experience)  
+Domain: Multi-national Universal Banking  
+Submission Window: 72 hours  
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 2 of 23  1. Assessment Overview 
+1.1  Objective 
+This assessment evaluates a senior candidate's ability to design, defend, and govern a 
+multi-region, AI/ML-driven enterprise banking platform on cloud-agnostic foundations. The 
+candidate is being considered for an Account Architect role, where they will serve as the 
+senior technical authority to the client's CIO and CTO, personally arbitrate trade-offs 
+between regulation, business outcomes, vendor commercials, and engineering pragmatism, 
+and own outcomes across a multi-year programme. 
+Unlike a junior solutioning exercise, this assessment is designed to test judgment. Several 
+requirements are intentionally exaggerated, contradictory, or under-specified. A strong 
+candidate will not only design the platform — they will challenge the brief, name the conflicts, 
+surface what is missing, and propose what NOT to build. 
+1.2  Dimensions Being Evaluated 
+• Enterprise architecture depth across distributed systems, microservices, service 
+mesh, event streaming, data, ML and Generative AI. 
+• Banking-specific regulatory fluency (RBI Master Directions, DPDP Act, BCBS 239, 
+SR 11-7 model risk, PSD2 / PSD3, DORA, PCI DSS, FAPI 2.0, ISO 20022). 
+• Ability to detect and challenge bad or contradictory business requirements without 
+losing client trust. 
+• Numerical literacy — capacity, latency, throughput, GPU economics, FinOps unit 
+costs. 
+• Model Risk Management and Responsible AI maturity, including champion / 
+challenger, shadow scoring, drift, bias, and adverse-action controls. 
+• Cloud-portability discipline — substituting capabilities across hyperscalers and on-
+premise without bolted-on abstractions. 
+• Account-architect-level communication — abstract enough for a Board paper, 
+specific enough that a principal engineer trusts it. 
+Important  
+Generic, AI-generated, or copy-pasted submissions will be identified and rejected. 
+Section 12 of this document describes the originality controls in detail and the 
+verbal-defence stage that follows submission. Candidates are explicitly permitted to 
+use any open tools (including LLMs); they are not permitted to disguise that use, and 
+they will be asked to verbally defend any part of their submission on a whiteboard. 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 3 of 23  2. Assessment Duration & Submission Rules 
+Activity Timeline 
+Submission window  72 hours from receipt of this document  
+Verbal defence (whiteboard Q&A)  1 hr.30 minutes, scheduled within 5 working days of 
+submission  
+Clarification questions to panel  Permitted only as written email; panel response not 
+guaranteed  
+Extension policy  No extension except documented medical / personal 
+emergency  
+ 
+Ground rule: There are no penalty marks for stating reasonable assumptions in writing and 
+proceeding. There are heavy penalty marks for assuming silently. Every assumption must be 
+explicit, numbered, and traceable from the executive summary through the diagrams. 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 4 of 23  3. Business Case — Aurelia Financial Group 
+Aurelia Financial Group (AFG) is a Tier-1 universal banking group headquartered in Mumbai, 
+with operating subsidiaries in Singapore, Dubai (DIFC), London, and New York. AFG is 
+regulated by the RBI as its lead regulator, with concurrent regulation by MAS, DFSA, FCA / 
+PRA, and OCC / FRB across its international operations. 
+3.1  Lines of Business 
+Business Unit  Scale & Notes  
+Retail Banking  41M active customers across geographies; deposits, 
+lending, cards, payments  
+SME & Mid-Corporate  1.2M business customers; working capital, trade, FX, cash-
+management  
+Wealth & Private Banking  ~180K HNW / UHNW relationships, booked principally out of 
+Singapore, Dubai, and London  
+Cards & Payments  28M active cards; 3.4B card transactions per year; UPI / 
+IMPS / RTGS for India  
+Trade Finance  Letters of Credit, Bank Guarantees, supply-chain finance  
+Treasury & FX (data-only)  Front-office NOT in scope for execution; in scope only for 
+risk and analytics data  
+Aurora Neobank (subsidiary)  Cloud-native digital-only bank acquired 2023; runs on 
+Kubernetes, PostgreSQL, Kafka  
+3.2  Existing Technology Landscape 
+• India retail & cards core: Finacle 10.x on Red Hat with Oracle Exadata 
+• India corporate & trade core: IBM z/OS mainframe, DB2, CICS — explicitly out of 
+scope for replacement in this programme 
+• Singapore & UK core: Temenos T24 on VMware 
+• Aurora neobank: Java + Kotlin microservices on Kubernetes (CNCF stack), 
+PostgreSQL, Kafka 3.x, Vault, OpenTelemetry 
+• 14 satellite systems for cards, AML, loans, treasury, KYC, sanctions screening, 
+complaints, collections 
+• Channels: iOS / Android (32M MAU), Web, IVR, 4,200 branches, RM workstation, 
+18,000-agent contact centre across 6 captive and 3 BPO sites, plus open-banking 
+APIs to ~340 fintech partners 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 5 of 23  4. Current-State Pain Points 
+Each pain point below carries an ID. Every architectural decision the candidate makes in 
+Parts 2 onwards MUST cite the specific pain-point IDs it addresses. Decisions that do 
+not trace back to a pain point will be marked as gold-plating. 
+ID Domain Current Pain Point  
+PP-01 Contact Centre  18,000-agent operation with AHT 7m12s, FCR 62%, attrition 
+38% p.a., cost-to-serve highest in peer group  
+PP-02 Customer 
+Experience  Mobile app NPS −8; primary complaints are slow chat, 
+repeated authentication, lack of context across channels  
+PP-03 Data Landscape  Customer data fragmented across 14 satellite systems and 4 
+cores; no enterprise customer 360; reconciliation overnight 
+only 
+PP-04 Fraud Card and payment fraud losses up 41% YoY; current rules-
+based engine produces 4.8% false-positive rate at the cost of 
+high genuine-transaction abandonment  
+PP-05 AML 41,000 alerts/day, 96% of which close as false positive; L1 
+analyst pool overloaded; SAR drafting takes ~3.5 hours/case  
+PP-06 Sanctions 
+Screening  96% false-positive rate on name screening; manual 
+disposition adds 2–7 day onboarding delay  
+PP-07 Credit Underwriting  Retail unsecured loan TAT 26 hours median; SME WC TAT 9 
+days; thin-file customers under-served  
+PP-08 Personalisation  Inconsistent cross-sell recommendations across channels; 
+product offers driven by quarterly campaign batches, not real-
+time signal  
+PP-09 Wealth RM  RMs spend ~40% of week on data gathering before client 
+meetings; research and product specs scattered across 9 
+repositories  
+PP-10 Compliance  No central inventory of models in production; no enforced 
+challenger-model regime; SR 11-7 / RBI MRM gap identified 
+by internal audit  
+PP-11 Cloud Cost  FY cloud spend overshot budget by 34%; no per-feature, per-
+tenant unit economics; no chargeback to LOBs  
+PP-12 Multilingual Support  Only English and Hindi supported in IVR/chat; loses ~14% of 
+South Indian and ~9% of East Indian customer interactions  
+PP-13 Documents  KYC and trade-finance documents (LC, BL, invoices) 
+processed manually; ~3.1% data-entry error rate  
+PP-14 Complaints  RBI CMS / Banking Ombudsman complaints routed manually; 
+misrouting rate ~22%  
+PP-15 Governance  No central LLM gateway, no prompt registry, no eval harness; 
+teams spinning up shadow GenAI projects on personal cards  
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 6 of 23  5. Strategic Goals & Target KPIs 
+Read carefully  
+Several of the goals below are deliberately under-specified, internally inconsistent, or in 
+direct tension with the regulatory environment. Identifying these tensions is part of 
+the assessment. See Section 9, question T9. 
+5.1  Customer & Revenue 
+• 20% lift in product cross-sell conversion via Next-Best-Action 
+• Personalised in-app experience for top 10M retail customers 
+• Reduce contact-centre cost-to-serve by 40%; AHT from 7m12s to 3m30s 
+• Deliver "GPT-4-grade" multilingual virtual assistant in 11 languages: English, Hindi, 
+Tamil, Telugu, Marathi, Bengali, Kannada, Malayalam, Arabic, Bahasa, Mandarin 
+5.2  Risk, Fraud & AML 
+• Real-time payment fraud at <100ms p99, with every declined transaction returning 
+a feature-attribution explanation visible to the operations analyst within the same 
+response payload 
+• Reduce AML L1 analyst workload by 60% via GenAI-assisted alert triage and 
+narrative generation; SAR drafting time from 3.5h to <45 minutes 
+• Sanctions false-positive rate from 96% to <70% with no measurable increase in 
+false-negatives 
+5.3  Operations, Cost & Platform 
+• 99.99% platform availability for customer-facing channels 
+• All AI inference must comply with data residency: India data in India, UAE data in 
+UAE — yet the platform must still allow access to "frontier-class" foundation models 
+for internal high-value use cases such as the Wealth RM copilot 
+• Reduce overall cloud spend by 25% vs current trajectory; track AI TCO at per-
+customer, per-call, per-decision granularity 
+• Cloud-portable design; no single-hyperscaler lock-in for stateful components; existing 
+investments in Kafka, Kubernetes, Vault, and OpenTelemetry should be reused 
+where rational 
+• Mainframe (z/OS) must not be re-platformed in this programme 
+5.4  Governance 
+• Full Model Risk Management alignment to SR 11-7 and RBI Master Direction on IT 
+Governance / RBI guidance on AI/ML in financial services 
+• Every customer-impacting AI decision must produce an auditable artefact retained for 
+7 years 
+• Right-to-explanation honourable within 30 days of a customer request, with the 
+explanation generated from the actual model artefact in use at the time of the original 
+decision 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 7 of 23  6. AI / ML Use Cases In Scope 
+The platform must support, at minimum, the following 12 use cases. The candidate may 
+propose additional use cases only if they materially serve the stated business goals and can 
+be justified within the programme envelope. 
+# Use Case  Primary Pattern  Critical Constraint  
+UC-
+01 Real-time payment fraud (UPI, 
+IMPS, CNP, wire)  Online ML scoring + 
+features <100ms p99, 
+explainable  
+UC-
+02 Card fraud + dispute pre-
+classification  Online ML + GenAI 
+summarisation  <150ms p99  
+UC-
+03 AML transaction monitoring assist 
+(triage + narrative + SAR draft)  GenAI + RAG over case 
+history Human-in-the-loop 
+mandatory  
+UC-
+04 Sanctions and PEP screening uplift  Fuzzy/ML name-
+matching + LLM 
+disambiguation  No increase in false-
+negatives  
+UC-
+05 Retail unsecured + SME WC credit 
+underwriting  Classical ML + alternate-
+data features  Adverse-action 
+explainability  
+UC-
+06 Behavioural credit-line management  Online ML  Explainable, fair-
+lending compliant  
+UC-
+07 Conversational AI for retail (mobile 
++ IVR), 11 languages  GenAI + RAG + agentic 
+tools Tone, safety, 
+multilingual  
+UC-
+08 Wealth / Corporate RM Copilot  GenAI + RAG over client 
++ research + product  PII isolation, audit trail  
+UC-
+09 Document intelligence: KYC + 
+trade-finance  OCR + LLM extraction + 
+validation  <3% error rate, 
+idempotent  
+UC-
+10 Complaints intelligence + routing  Classification + GenAI 
+summarisation  Regulator-grade audit 
+trail 
+UC-
+11 Next-Best-Action personalisation  Online recsys + uplift 
+modelling  Real-time on app/RM  
+UC-
+12 Branch Co-Pilot (policies, circulars, 
+product) GenAI + RAG over 
+internal corpus  Source citations 
+mandatory  
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 8 of 23  7. Mandatory Scope Clarifications the Candidate Must 
+Address 
+Before producing the design, the candidate must explicitly answer the following framing 
+questions. Vague or evasive answers will be marked down — even where the underlying 
+technical design is strong. 
+1. What is your operating definition of "cloud-agnostic" for this programme? Where do 
+you draw the line between true portability, soft portability via abstraction, and 
+pragmatic acceptance of a managed service? Cite at least two components where 
+you would knowingly accept lock-in and explain why. 
+2. Which one regulatory regime do you treat as the binding constraint when two 
+regimes conflict (e.g., DPDP vs GDPR vs UAE PDPL)? Justify. 
+3. State your position on the role of the IBM z/OS mainframe in the target architecture. 
+Is it a system of record, a system of reference, or both? How does data egress from it 
+without violating MIPS budget? 
+4. State your position on a single global LLM gateway vs regional gateways. There is a 
+correct answer for this scenario; defend yours. 
+5. Which use cases from Section 6 would you de-scope or defer if forced to deliver an 
+MVP in 90 days, and why? 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 9 of 23  8. Assessment Tasks 
+Part 1 — Executive Summary & Assumption Frame 
+Produce a concise executive summary (maximum 3 pages, no minimum) suitable for the 
+AFG Board's Technology Committee. The summary must cover: 
+• Business understanding in your own framing — not a restatement of this brief 
+• Top 5 operational bottlenecks identified, traced to pain-point IDs 
+• Top 3–5 AI opportunity areas, ranked by value and feasibility, with order-of-
+magnitude business case 
+• Material risks and unstated assumptions 
+• Cloud-portability stance and the deliberate exceptions you would take 
+• Headline KPIs you would commit to in front of the Board 
+• Transformation roadmap headline (one paragraph) 
+Trap warning  
+Executive summaries that read like consulting boilerplate ( "leverage cutting-edge AI to 
+drive synergy" ) will be rejected outright. We are looking for specificity, opinion, and 
+tradeoff articulation . 
+Part 2 — Business Architecture 
+Produce a Business Architecture diagram and accompanying narrative covering: 
+• Business domains and capability map (use BIAN-aligned or comparable framing) 
+• User personas (minimum: retail customer, SME customer, RM, contact-centre agent, 
+AML analyst, branch operations, model-risk officer, CISO, regulator) 
+• AI touchpoints overlaid on the customer / employee journeys 
+• Governance, risk, and audit layers 
+• Operational boundaries between LOBs, geographies, and regulatory entities 
+Part 3 — Logical Architecture (Cloud-Agnostic) 
+Produce a Logical Architecture diagram in any tool you prefer (draw.io, Lucidchart, 
+Excalidraw, or hand-drawn-on-tablet are all acceptable; PowerPoint is acceptable but 
+discouraged). The diagram must show: 
+• Data flow (sync + async + batch) 
+• Event flow on the streaming backbone, with topic taxonomy 
+• AI orchestration layer (LLM gateway, agent framework, tool federation) 
+• Integration layers to core systems including the mainframe 
+• Human-in-the-loop feedback loops 
+• Monitoring, observability, and audit 
+• Boundaries between in-region, cross-region, and external-vendor planes 
+The diagram must clearly explain, in commentary alongside: (a) interaction patterns; (b) 
+component dependencies; (c) system boundaries; (d) how each logical block can be 
+substituted across hyperscalers or on-premise. 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 10 of 23  Part 4 — Cloud-Agnostic Deployment Architecture 
+Convert your logical architecture into a deployment architecture using portable, open-
+standards-based building blocks. Where you introduce a managed service, you must 
+explicitly state the abstraction layer that preserves portability. 
+The deployment design must include: 
+• Networking: SDN, private connectivity, segmentation, egress controls 
+• Zero-trust security overlay; mTLS via service mesh; SPIFFE / SPIRE or equivalent 
+workload identity 
+• Identity: federated OIDC / SAML against enterprise IdP; PSD2-grade strong 
+customer authentication for relevant flows; FAPI 2.0 for open-banking APIs 
+• AI services: model serving (online + batch), inference, embedding generation, 
+evaluation 
+• Data services: transactional, analytical, vector, object storage, lakehouse 
+• Streaming: Kafka or equivalent, schema registry, CDC, dead-letter handling 
+• Monitoring: OpenTelemetry, Prometheus + Grafana, LLM-specific observability 
+• CI/CD and GitOps; image signing; SBOM 
+• Disaster recovery and multi-region strategy per data class 
+Part 5 — Component Diagrams (Minimum 3) 
+Produce detailed component diagrams (UML-style or C4 Level-3 acceptable) for at least the 
+following three areas. The diagrams must show internal sub-components, ports, protocols, 
+and persistence: 
+6. Real-time payment fraud service (UC-01) — covering the inference path, feature 
+store interaction, explainability sidecar, and the path to the rules / human-review 
+fallback. 
+7. LLM gateway and orchestration plane — covering routing, guardrails, prompt 
+registry, eval harness, secrets handling, observability tap, and tool/function 
+execution. 
+8. AML alert triage + narrative generation service (UC-03) — covering RAG over case 
+history, agentic tool calls into KYC / sanctions / transaction-history systems, human-
+in-the-loop approval, and audit-artefact production. 
+Comments on each component diagram are mandatory. Each component must have a 
+one- or two-sentence note explaining its purpose, the open protocol/interface that protects 
+portability, and the failure mode you optimised against. 
+Part 6 — Sequence Diagram (One End-to-End Flow) 
+Produce ONE detailed sequence diagram for the following end-to-end flow. We have chosen 
+this flow because it exercises most of the platform: streaming, microservices, service mesh, 
+authentication, ML inference, GenAI, RAG, human-in-the-loop, audit, and the mainframe. 
+Required flow  
+Customer-initiated UPI payment of ₹2,40,000 to a new beneficiary, where the fraud 
+model returns a borderline score and the transaction is held for step-up 
+authentication, then escalated to a contact-centre agent who consults the 
+AML/fraud co-pilot before releasing the transaction.  
+The sequence diagram must include, at minimum, these actors and components: 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 11 of 23  • Mobile app → API gateway → BFF → payment orchestration service  
+• AuthN/AuthZ (OIDC, mTLS via service mesh, SCA challenge) 
+• Feature store (online) and feature freshness check 
+• Fraud inference service + explainability sidecar 
+• Decision orchestrator + rules engine 
+• Kafka topics involved (named explicitly) 
+• Step-up authentication channel (push / SMS / biometrics) 
+• Contact-centre console invoking AML/fraud co-pilot (GenAI + RAG) 
+• LLM gateway with guardrails and PII redaction 
+• Mainframe (z/OS) call for customer account context via API façade 
+• Audit log emission and 7-year retention path 
+• Customer notification + final settlement leg 
+Comments on each interaction are mandatory. Annotate latency budget per hop, the 
+failure / timeout behaviour, and which observability signal is emitted. 
+Part 7 — AI / GenAI Platform Strategy 
+7A. RAG Design 
+• Chunking strategy (semantic, structural, hierarchical) with the rationale for chosen 
+size and overlap for at least two corpora: (i) AML case history and (ii) wealth product 
+/ research documents 
+• Embedding strategy: model choice, dimensionality, multilingual coverage, refresh 
+cadence, and how you handle the corpus refresh without invalidating the entire index 
+• Retrieval design: dense vs hybrid vs graph; rerankers; metadata filters; tenant 
+isolation 
+• Grounding methodology: citations, structured context windows, deterministic retrieval 
+contracts 
+• Hallucination mitigation: groundedness scoring, refusal patterns, retrieval-confidence 
+gates 
+7B. Model Strategy 
+• Model selection criteria across managed, open-weight, and self-hosted options 
+• Fine-tuning vs prompt engineering vs RAG vs adapter-based (LoRA, QLoRA, DPO) 
+— for which use cases and why 
+• Latency: token streaming, speculative decoding, model right-sizing, batching 
+• Cost optimisation: GPU vs CPU, quantisation, distillation, KV-cache reuse, semantic 
+caching 
+• Model routing across a portfolio of small / medium / frontier models — including the 
+routing policy itself 
+7C. Responsible AI & AI Safety 
+• Prompt injection (direct and indirect, including indirect via documents in RAG corpus) 
+• Jailbreak and policy-bypass attempts 
+• Toxicity, unsafe outputs 
+• Copyright and IP leakage 
+• Hallucinations and grounded-refusal patterns 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 12 of 23  • PII / sensitive-data leakage in prompts AND in completions 
+• Bias and fairness across demographic and regional cohorts, with measurement 
+methodology 
+• Adverse-action and fair-lending compliance for credit use cases 
+7D. Human-in-the-Loop Design 
+• Escalation flows from AI to human agent 
+• Confidence thresholds and uncertainty quantification 
+• Approval mechanisms for high-impact actions (e.g., releasing held transactions, 
+raising AML SARs) 
+• Audit trails: prompt, retrieved context, model output, human decision, downstream 
+side-effect 
+• Feedback ingestion back into the model lifecycle without contaminating training with 
+PII 
+Part 8 — Security, Compliance & Responsible AI 
+Your design must address each of the following. A separate Security Architecture diagram is 
+optional but encouraged. 
+Area Requirement  
+Data residency  Regional isolation; data-plane and control-plane separation across 
+India, UAE, UK, US, Singapore  
+PII protection  Tokenisation / masking at ingest; redaction in prompts and 
+completions; reversible only by privileged role  
+Encryption  At-rest and in-transit; customer-managed keys (BYOK / HYOK) for 
+regulated tenants  
+Secrets Centralised secrets store; short-lived credentials; zero secrets in 
+prompts or repos  
+Network Zero-trust; private connectivity to AI and data services; explicit egress 
+allow-lists; no public model API access from production data planes  
+Access control  RBAC + ABAC; least privilege; JIT elevation; segregation of duty 
+between model-deployer and model-approver  
+AI governance  Explainability, audit, model + prompt + retrieval-index versioning, 
+evaluation gates, champion / challenger, drift monitoring  
+Model risk  SR 11-7 / RBI MRM alignment: model inventory, model validation 
+independence, ongoing monitoring, recourse  
+Supply chain  Signed container images (cosign), SBOMs, dependency scanning, 
+model provenance + checksums  
+Prompt + output  Input validation, output filtering, jailbreak detection, prompt-injection 
+defences, content classifiers  
+Payments  PCI-DSS scope minimisation; FAPI 2.0 for open-banking APIs; PSD2 
+SCA 
+Operational resilience  DORA-aligned (for UK / EU plane): ICT risk register, third-party 
+concentration risk, exit testing  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 13 of 23  Part 9 — Scalability, Reliability & FinOps 
+9A. Scalability 
+• Peak-traffic handling for salary day (4.5x UPI spike to 82,000 TPS sustained for ~90 
+minutes) 
+• IPL / cricket season spikes in entertainment-linked card spend 
+• Global traffic distribution and latency-aware routing 
+• Capacity planning for both stateless services AND GPU-backed inference 
+9B. Reliability 
+• HA strategy (multi-AZ; multi-region active-active vs active-passive); state your choice 
+per data class 
+• Failover and chaos engineering 
+• Graceful degradation (e.g., fall back from RAG to a cached top-K answer; from 
+GenAI to extractive QA; from ML to rules) 
+• RPO / RTO matrix per data class (transactional, audit, model artefact, vector index, 
+prompt registry) 
+• AI fallback hierarchy: smaller model → rules → human handoff → safe -default 
+9C. FinOps 
+• Major cost drivers (tokens, GPUs, vector storage, egress, observability, eval, 
+embedding refresh) 
+• Token optimisation (prompt compression, context pruning, summarisation caches) 
+• Model routing (cheapest-fit-for-task with quality floor) 
+• Caching: semantic cache, embedding cache, response cache, KV-cache 
+• GPU utilisation: batching, multi-tenant inference, quantisation, scheduler 
+• Showback / chargeback and per-feature unit economics; per-customer AI cost 
+telemetry 
+Part 10 — Delivery Roadmap & Risk Register 
+10A. Phased Roadmap 
+• MVP (single use case, single region, narrow user cohort) — propose which use case 
+and why 
+• Pilot rollout (expanded use cases, dual region, controlled internal rollout) 
+• Enterprise rollout (global, multi-region) 
+• Stabilisation (FinOps, hardening, governance maturity, continuous evaluation) 
+10B. Risk Register 
+Cover at minimum: 
+• Technical (model drift, vendor API deprecation, vector DB scaling, mainframe MIPS 
+contention) 
+• Operational (GPU capacity, cost runaway, on-call complexity, talent scarcity) 
+• Compliance (DPDP, GDPR, sectoral RBI / RBI MRM, cross-border data, sanctions) 
+• AI governance (hallucinations, bias, explainability gaps, adverse-action exposure) 
+• Adoption (change management, agent and RM trust, executive sponsorship) 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 14 of 23  • Vendor lock-in and exit strategy — with named exit triggers 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 15 of 23  9. Critical Thinking & Architecture Challenge Questions 
+The following 15 questions are mandatory. Response quality here will weight heavily in 
+evaluation. Several questions contain deliberate traps. A confident, well-reasoned refusal of 
+a bad idea will score higher than a polished implementation of one. 
+T1.  Centralised global vector DB for 41M customers 
+The Group CIO has insisted that all 41M customer profiles be centralised in a single global 
+vector database so the Wealth-RM Copilot can retrieve any customer context instantly. 
+Respond. Document the regulations you would cite in front of the CIO and the alternative 
+architecture you would propose. 
+T2.  Frontier LLM in the fraud decline path 
+Marketing wants every declined transaction to return a natural-language reason generated 
+live by a frontier LLM ("Sorry, we couldn't process this because…"). Critique the design on 
+three independent grounds: latency, model risk / adverse-action regulation, and operational 
+cost. Propose what you would do instead. 
+T3.  Eliminate GPU spend entirely 
+Finance has demanded that the platform eliminate GPU spend by serving everything on 
+CPU with quantised models. Where do you agree, where do you refuse, and what is the 
+quantified trade-off? Distinguish between embedding generation, classical ML, generative 
+inference, and reranking. 
+T4.  Champion / Challenger regime 
+RBI has issued a draft directive requiring banks to maintain a challenger model alongside 
+every production credit and fraud model, with monthly comparative performance reports. 
+Design the architecture pattern (shadow scoring, log-only inference, evaluation harness, 
+sampling) that supports this without doubling production load or contaminating live decisions. 
+T5.  Salary-day capacity calculation 
+On salary day (last working day of the month), UPI traffic spikes 4.5x to 82,000 TPS 
+sustained for ~90 minutes; the real-time fraud service must hold <100ms p99 throughout. 
+Walk through the capacity calculation: model-serving pod count, GPU / CPU sizing, online 
+feature-store throughput, Kafka partition count and consumer parallelism, autoscaling trigger 
+and pre-warm strategy. Show the math. 
+T6.  Fully agentic SME loan disbursement 
+The Board has asked whether AFG should build fully autonomous agentic AI for SME 
+working-capital disbursement up to ₹50 lakh per case. State your position. Discuss 
+autonomy levels, kill-switches, regulatory exposure, and what you would actually deliver 
+instead. 
+T7.  "Fully managed RAG" vendor pitch 
+A vendor pitches a fully managed RAG service with a global vector index and embeddings 
+on their infrastructure, priced 30% cheaper than self-hosted Milvus + open embedding 
+model. Analyse the offer: hidden costs, hidden risks, residency, IP, exit. Would you sign? 
+T8.  Single open-source frontier model standardisation 
+An internal architecture group wants to standardise on a single open-weight frontier model 
+(e.g., a 70B Llama-class model) for every generative use case. Critique. When is model 
+pluralism worth its complexity, and when is it noise? 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 16 of 23  T9.  Identify the bad requirements 
+List at least THREE requirements in this assignment (sections 5–7) that you would push 
+back on with the client, with the exact words you would use in front of the CEO. This 
+question doubles as an originality control: candidates who do not identify deliberate 
+contradictions will be marked down on critical reading. 
+T10.  Vector DB vendor bankruptcy 
+If your chosen vector database vendor went bankrupt and announced 90-day end-of-life, 
+what is your exit strategy? Include code-level, data-level, and operational steps. State 
+whether your current design choice would survive this and why. 
+T11.  Operational impact of failure modes 
+Walk through the operational impact of each of the following, including blast radius, detection 
+latency, and recovery action: (a) primary Kafka cluster split-brain; (b) embedding model 
+silently changed by managed vendor; (c) enterprise IdP failure; (d) regional cloud-provider 
+outage during salary day; (e) prompt-injection attack against the AML alert-summary agent. 
+T12.  Rollback strategy 
+Design a rollback strategy that covers, at minimum: model artefact version, prompt version, 
+retrieval index version, orchestration logic version, downstream side-effects already 
+committed to ledger / mainframe, and customer communications already sent. Address the 
+case where a rollback itself is unsafe (irreversible side-effect). 
+T13.  CISO vs CMO conflict 
+The CISO insists on running all LLM inference on-premise in an air-gapped GPU cluster. 
+The CMO insists on GPT-4-grade output for retail chat in 11 languages. Reconcile. Show 
+your routing policy and the criteria that determine which queries go where. 
+T14.  Hidden GenAI cost line items 
+List at least SEVEN hidden operational cost line items in a production GenAI platform that 
+you are confident the CFO has not budgeted for, with rough order-of-magnitude estimates as 
+a percentage of total platform cost (e.g., evaluation, prompt iteration, embedding refresh, 
+observability, safety reviews, eval data curation, red-teaming). 
+T15.  ISO 20022 + fraud / AML intersection 
+ISO 20022 migration for cross-border payments is happening in parallel. How does the 
+richer structured-message format intersect with your fraud and AML feature engineering, and 
+what does this imply for your schema registry, feature store, and model retraining cadence? 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 17 of 23  10. Expected Platform Capability Matrix 
+For every capability area below, the candidate must list: (a) a primary open-source / cloud-
+portable choice with version; (b) a managed-service alternative on at least two hyperscalers 
+(AWS, Azure, GCP); (c) the abstraction or interface (API, SDK, protocol) that preserves 
+portability; (d) the named owner of operational toil. Entries without all four columns will be 
+marked incomplete. 
+Capability Area  Expected Components & Reference Patterns  
+GenAI / Foundation Models  LLM abstraction layer (LiteLLM, vLLM, OpenRouter, or in-house 
+gateway); pluggable providers (managed frontier APIs, OpenAI-
+compatible, open-weights such as Llama, Mistral, Qwen); 
+standardised prompt + tool -use contracts  
+Agentic / Orchestration  LangChain, LlamaIndex, Semantic Kernel, or custom 
+orchestrator; MCP (Model Context Protocol) for tool federation; 
+structured-output enforcement  
+Search & Retrieval  Vector DB (pgvector, OpenSearch / Elasticsearch, Milvus, 
+Weaviate, Qdrant); hybrid search (BM25 + dense); cross-
+encoder rerankers; tenant -scoped indices  
+Compute — Stateless  Kubernetes; serverless / FaaS for event-driven; managed app 
+platform for steady APIs  
+Compute — AI Inference  GPU-backed Kubernetes node pools; model servers (Triton, 
+vLLM, TGI, Ray Serve); autoscaling on GPU utilisation + queue 
+depth + token throughput  
+Storage & Data  Object storage (S3 / S3-compatible); transactional (PostgreSQL 
+/ distributed NewSQL); document or wide-column for telemetry; 
+data lake in open formats (Parquet, Iceberg, Delta)  
+Streaming & Events  Kafka or compatible (Redpanda, MSK, Confluent, Event Hubs 
+Kafka surface); CDC via Debezium; schema registry  
+Analytics & Lakehouse  Lakehouse on Iceberg / Delta / Hudi; query engines (Trino, 
+Spark, DuckDB); semantic layer for BI  
+Feature Store / ML Platform  Feast or managed equivalent; MLflow / Kubeflow / SageMaker / 
+Vertex AI / Azure ML abstracted via portable model registry  
+Security Secrets (Vault or cloud-managed); CSPM; SIEM; runtime 
+workload protection; CNAPP  
+AI Governance & Lineage  Open metadata catalog (OpenMetadata, DataHub, Unity 
+Catalog); model + dataset cards; policy-as-code (OPA); model-
+risk inventory  
+Identity OIDC / SAML federation; workload identity via SPIFFE / SPIRE 
+or cloud-native equivalents; FAPI 2.0 for open-banking; PSD2 
+SCA 
+Monitoring & Observability  OpenTelemetry across traces, metrics, logs; Prometheus + 
+Grafana; central log aggregation; LLM-specific observability 
+(Langfuse, Arize, WhyLabs)  
+API Management  Gateway with rate-limiting, AuthN/Z, quotas (Kong, Apigee, AWS 
+API Gateway, Azure APIM); BFF per channel  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 18 of 23  Capability Area  Expected Components & Reference Patterns  
+Container Platform  OCI image registry; signed images (cosign); SBOM generation; 
+admission control (Kyverno / OPA Gatekeeper)  
+Service Mesh  Istio or Linkerd for mTLS, traffic policy, retries, circuit breaking, 
+canary; identity-based authz  
+Edge, CDN & Traffic  Global anycast LB; geo-DNS for failover; CDN with edge 
+compute for static personalisation caching  
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 19 of 23  11. Deliverables 
+Deliverable  Format Status 
+Executive Summary  Document, max 3 pages  Mandatory  
+Assumption Register  Document or table, numbered  Mandatory  
+Business Architecture  Diagram + narrative  Mandatory  
+Logical Architecture (cloud-agnostic)  Diagram + narrative  Mandatory  
+Deployment Architecture (portable + 
+managed variants)  Diagram + narrative  Mandatory  
+Component Diagrams (minimum 3)  Diagrams + per-component 
+commentary  Mandatory  
+Sequence Diagram (UPI fraud + AML 
+co-pilot flow)  Diagram + per-interaction 
+commentary  Mandatory  
+AI / GenAI Platform Strategy  Document, structured per 7A–7D  Mandatory  
+Capability Matrix (per Section 10)  Table with 4 columns per row  Mandatory  
+Critical Thinking Responses (T1–T15)  Document  Mandatory  
+Decision Log (minimum 25 entries)  Table per Section 12  Mandatory  
+Capacity Calculation Sheet (T5 working)  Spreadsheet or table  Mandatory  
+Risk Register  Table Mandatory  
+Roadmap  Gantt or phase chart  Mandatory  
+Originality Affidavit  Document, last page  Mandatory  
+Security Architecture  Diagram Optional but 
+encouraged  
+AI Governance Framework  Document  Optional but 
+encouraged  
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 20 of 23  12. Originality & Anti-Plagiarism Controls 
+The candidate is explicitly permitted to use any open tool, including any LLM, vendor 
+documentation, blog, or reference architecture. Hidden tool use is the only disqualifier. 
+To support this, the assignment is engineered with several originality controls. Treat each as 
+binding. 
+12.1  Personal Architecture Codename 
+Choose a unique 3-letter codename for your reference architecture (your initials, or any 
+string you can defend). Use it as the prefix on every component label, every diagram 
+element, every decision-log entry. Example: codename ABC → ABC-FRD-INF-01 for the 
+fraud inference service. Inconsistent use of the codename across diagrams is a copy-paste 
+indicator. 
+12.2  Pain-Point Cross-References 
+Every architectural decision from Part 2 onwards must cite at least one pain-point ID from 
+Section 4 (PP-01 to PP-15). Decisions that do not trace back to a pain point will be marked 
+as gold-plating and scored down. The Decision Log (12.4) is the primary place this 
+traceability is checked. 
+12.3  Identify the Deliberately-Flawed Requirements 
+This document contains at least four deliberately flawed, contradictory, or under-
+specified requirements planted in Sections 5–7. Identifying them is the substance of 
+question T9. Candidates who fail to surface at least three of them will lose marks on critical 
+reading regardless of the rest of the submission's quality. 
+12.4  Decision Log (Minimum 25 Entries) 
+For every major component, produce a Decision Log entry with the following columns. 
+Generic entries ("selected Kafka because it is the industry standard") will be rejected; entries 
+must be specific to the AFG scenario. 
+Column Content 
+Component ID  Codename-prefixed (e.g., ABC-STR-KFK-01)  
+Selected Technology + 
+Version Named product and version, e.g., Kafka 3.7 in KRaft mode  
+Pain Points Addressed  PP-IDs, comma -separated  
+Rejected Alternatives (min 2)  Named products; not categories  
+Reason for Rejection  1–2 sentences, scenario-specific, not generic  
+Portability Interface  The open protocol / API / format that protects against lock -in 
+Operational Owner  Team / role that owns toil and on -call for this component  
+12.5  Numerical Defence Sheet 
+For the capacity calculation in T5, show every step of working: assumed CPU/GPU per 
+request, model size, batch size, kv-cache, network RTT, feature-store latency, Kafka 
+throughput per partition, and the autoscaler's reaction curve. We will spot-check by asking 
+you to defend any number verbally. 
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 21 of 23  12.6  Originality Affidavit (Last Page of Submission) 
+List every external tool used (LLM names + versions, vendor documents, blogs, reference 
+architectures), and a one-line description of what each was used for. Honest disclosure is 
+part of the assessment and is not penalised. Hidden tool use is disqualifying. 
+12.7  Verbal Defence (Mandatory) 
+A 30-minute structured Q&A will follow submission. Be prepared to draw on a physical or 
+virtual whiteboard, answer follow-up questions on any part of the submission, justify any 
+decision in the Decision Log, and walk through your capacity calculation live. Candidates 
+who cannot independently defend their submission will not progress. 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 22 of 23  13. Evaluation Criteria 
+Evaluation Area  Weight 
+Business Understanding & Critical Reading of the Brief  10% 
+Enterprise Architecture (cloud-agnostic rigour, microservices, service 
+mesh, streaming, integration with mainframe)  18% 
+AI / ML & GenAI Depth (model strategy, RAG, agentic design, MRM)  18% 
+Security, Compliance & Responsible AI (residency, MRM, adverse-
+action, DORA, PCI, FAPI)  15% 
+Scalability, Reliability & Operational Resilience  10% 
+FinOps & Cost Optimisation (incl. unit economics and capacity math)  8% 
+Delivery, DevOps & Cloud Portability  6% 
+Critical Thinking, Tradeoff Articulation & Trap Detection (T1–T15)  15% 
+ 
+Note on "Critical Thinking & Trap Detection": a candidate who identifies the planted 
+contradictions, refuses to design a bad request, and proposes a sound alternative can 
+outscore a candidate with a more polished but uncritical submission. This is by design; an 
+Account Architect's value is in judgment. 
+  
+
+Enterprise AI / ML Architecture Assessment — Banking Edition  
+Confidential — Account Architect Assessment Page 23 of 23  14. Submission Guidelines 
+Every architectural decision must include: (i) why the component / pattern was selected; (ii) 
+why each alternative was rejected; (iii) how portability is preserved (interface, protocol, 
+abstraction); (iv) the pain-point IDs it addresses. 
+Every platform component must include: scaling strategy, HA strategy, monitoring strategy, a 
+primary open-source choice, at least one managed-service alternative, and the named 
+operational owner. 
+• All assumptions explicitly numbered and traceable 
+• All non-functional requirements addressed 
+• Cloud-portability designed in, not bolted on 
+• Governance and security mandatory; not optional add-ons 
+• Generic AI-generated answers will be rejected 
+Submission Format 
+• Single zipped folder named <Candidate-Codename>-AFG-Assessment.zip 
+• Diagrams accepted as PNG, SVG, PDF, or native source (drawio, lucid, miro export) 
+• Documents accepted as PDF or DOCX 
+• Spreadsheet for capacity calculation as XLSX or CSV 
+• Total ZIP size <50 MB; if larger, contact the panel 
+ 
+End of assessment brief.  Good luck. 
+

@@ -1,0 +1,57 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#2d3748', 'primaryTextColor': '#fff'}}}%%
+graph TB
+    subgraph Global["🌍 Global Control Plane (Metadata Only — No Customer Data)"]
+        direction LR
+        MR[Model Registry]
+        PR[Prompt Registry]
+        FO[FinOps Aggregation]
+        GC[Governance Config]
+    end
+
+    subgraph India["🇮🇳 India Region (Mumbai + Hyderabad)"]
+        direction TB
+        IN_K8S[K8s Cluster<br/>AI Services]
+        IN_GPU[GPU Pool<br/>vLLM • Triton]
+        IN_KAFKA[Kafka Cluster<br/>3-node KRaft]
+        IN_PG[PostgreSQL<br/>Streaming Repl]
+        IN_REDIS[Redis Cluster<br/>Feature Store]
+        IN_VEC[pgvector<br/>Embeddings]
+        IN_AUDIT[Audit Store<br/>Iceberg • 7yr]
+        IN_MF[Mainframe Facade<br/>z/OS CDC]
+    end
+
+    subgraph Singapore["🇸🇬 Singapore Region"]
+        direction TB
+        SG_K8S[K8s Cluster<br/>Wealth Services]
+        SG_GPU[GPU Pool<br/>RM Copilot]
+        SG_KAFKA[Kafka Cluster]
+        SG_PG[PostgreSQL]
+        SG_AUDIT[Audit Store]
+    end
+
+    subgraph UAE["🇦🇪 UAE Region (DIFC)"]
+        direction TB
+        AE_K8S[K8s Cluster<br/>Wealth Services]
+        AE_GPU[GPU Pool]
+        AE_KAFKA[Kafka Cluster]
+        AE_AUDIT[Audit Store]
+    end
+
+    subgraph UK["🇬🇧 UK Region (London)"]
+        direction TB
+        UK_K8S[K8s Cluster<br/>Corporate + Wealth]
+        UK_GPU[GPU Pool]
+        UK_KAFKA[Kafka Cluster]
+        UK_PG[PostgreSQL]
+        UK_AUDIT[Audit Store]
+    end
+
+    Global -.->|config sync| India
+    Global -.->|config sync| Singapore
+    Global -.->|config sync| UAE
+    Global -.->|config sync| UK
+
+    India -->|No customer data| Global
+    Singapore -->|No customer data| Global
+    UAE -->|No customer data| Global
+    UK -->|No customer data| Global
