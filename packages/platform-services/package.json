@@ -1,0 +1,29 @@
+{
+  "name": "@afg/platform-services",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platform infrastructure services: Identity, Streaming, Feature Store, Audit, Guardrails, LLM Gateway",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@afg/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
